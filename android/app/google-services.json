@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "1010399320425",
+    "firebase_url": "https://mood-fresher-default-rtdb.firebaseio.com",
+    "project_id": "mood-fresher",
+    "storage_bucket": "mood-fresher.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1010399320425:android:1f45fd57bcdcbc6e3f85f8",
+        "android_client_info": {
+          "package_name": "com.example.mood_fresher"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1010399320425-2vh2l7k5dvdutmvtuh1gj9bj8ptkfn42.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mood_fresher",
+            "certificate_hash": "8b98427768fce02486de3c4e13aaffc1d6a85fad"
+          }
+        },
+        {
+          "client_id": "1010399320425-5i7e8dfg9mhb24dk59hn0j0gjr8rth7h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mood_fresher",
+            "certificate_hash": "76e70687bd1098a77577b58fb8154ff7b6c6c11d"
+          }
+        },
+        {
+          "client_id": "1010399320425-ms3cerhhd6983hnljt3geec5n5kh2osr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAy82V4S4G6cJdfS9juF2760yaLXLoaufo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1010399320425-83m8r3iemuoo717vreqj883r04ovqodn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1010399320425-98d04qv80bfve5fg1sem64a6eq3j64h5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.moodFresher"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
