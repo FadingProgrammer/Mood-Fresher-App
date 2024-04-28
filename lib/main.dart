@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       title: 'Mood Fresher',
       theme: ThemeData.dark()
           .copyWith(scaffoldBackgroundColor: mobileBackgroundColor),
-      home: const LoginScreen(),
+      home: const SignInScreen(),
     );
   }
 }

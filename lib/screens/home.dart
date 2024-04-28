@@ -90,7 +90,8 @@ class HomeScreenState extends State<HomeScreen> {
       case 1:
         return const SearchScreen();
       case 2:
-        return const UploadPostScreen();
+        return UploadPostScreen(
+            uid: widget.currentUser.uid, username: username);
       case 3:
         return const ReelsScreen();
       case 4:

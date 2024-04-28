@@ -98,8 +98,8 @@ class ProfileSetupScreenState extends State<ProfileSetupScreen> {
         isfinishing = true;
         _errorText = '';
       });
-      await FirebaseService.updateProfile(
-              _displayNameController.text.trim(), selectedImage)
+      await FirebaseService.updateProfile(_displayNameController.text.trim(),
+              selectedImage.isNotEmpty ? selectedImage : profilePlaceholder)
           .then((value) => Navigator.push(
                 context,
                 MaterialPageRoute(

@@ -203,7 +203,7 @@ class PostCardState extends State<PostCard>
                   text: widget.snap['username'],
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const TextSpan(text: '  caption'),
+                TextSpan(text: '  ${widget.snap['caption']}'),
               ],
             ),
           ),

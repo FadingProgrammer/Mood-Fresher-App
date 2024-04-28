@@ -5,34 +5,31 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mood_fresher/utils/constants.dart';
 
 class FirebaseService {
   static Future<void> uploadPost({
     required File imageFile,
+    required String uid,
     required String username,
+    required String caption,
     String? location,
   }) async {
     try {
       String imageUrl = await uploadImage(imageFile,
           'post_image_${DateTime.now().millisecondsSinceEpoch}', "images");
-      await FirebaseFirestore.instance.collection('posts').add({
+      var postRef = await FirebaseFirestore.instance.collection('posts').add({
         'Image': imageUrl,
         'username': username,
+        'caption': caption,
         'location': location ?? '',
         'likeCount': 0,
         'likedBy': [],
         'comments': [],
         'timestamp': FieldValue.serverTimestamp(),
       });
-
-      // 2. Update user's posts in the 'users' collection
-      // await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .doc(username)
-      //     .update({
-      //   'posts': FieldValue.arrayUnion([postRef.id]),
-      // });
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'posts': FieldValue.arrayUnion([postRef.id]),
+      });
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
     }
@@ -85,8 +82,7 @@ class FirebaseService {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
       await currentUser?.updateDisplayName(displayName);
-      await currentUser
-          ?.updatePhotoURL(imageUrl.isNotEmpty ? imageUrl : profilePlaceholder);
+      await currentUser?.updatePhotoURL(imageUrl);
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser!.uid)
@@ -94,6 +90,7 @@ class FirebaseService {
         'Name': displayName,
         'Image': imageUrl,
         'email': currentUser.email,
+        'posts': [],
         'likedPosts': [],
         'savedPosts': [],
       }, SetOptions(merge: true));

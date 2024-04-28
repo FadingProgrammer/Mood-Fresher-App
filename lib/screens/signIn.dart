@@ -5,14 +5,14 @@ import 'package:mood_fresher/screens/home.dart';
 import 'package:mood_fresher/screens/profileSetup.dart';
 import 'package:mood_fresher/screens/signUp.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignInScreen extends StatefulWidget {
+  const SignInScreen({super.key});
 
   @override
-  LoginScreenState createState() => LoginScreenState();
+  SignInScreenState createState() => SignInScreenState();
 }
 
-class LoginScreenState extends State<LoginScreen> {
+class SignInScreenState extends State<SignInScreen> {
   final GlobalKey<FormState> key = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -132,7 +132,7 @@ class LoginScreenState extends State<LoginScreen> {
                 await FirebaseService.loginWithGoogle().then((value) {
                   User? currentUser = FirebaseAuth.instance.currentUser;
                   if (value.additionalUserInfo?.isNewUser ?? false) {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
@@ -140,7 +140,7 @@ class LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   } else {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
@@ -158,9 +158,7 @@ class LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Divider(
-              color: Colors.grey,
-            ),
+            const Divider(color: Colors.grey),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -168,8 +166,7 @@ class LoginScreenState extends State<LoginScreen> {
                 const Text("Don't have an account?"),
                 TextButton(
                   onPressed: () {
-                    // Navigate to the signup screen
-                    Navigator.push(
+                    Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                             builder: (context) => const SignUpScreen()));
@@ -195,7 +192,7 @@ class LoginScreenState extends State<LoginScreen> {
           .then((value) {
         if (value) {
           User? currentUser = FirebaseAuth.instance.currentUser;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => HomeScreen(currentUser: currentUser!),

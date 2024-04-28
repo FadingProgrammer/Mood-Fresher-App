@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mood_fresher/firebase/firebase.dart';
 import 'package:mood_fresher/screens/profileSetup.dart';
+import 'package:mood_fresher/screens/signIn.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -89,6 +90,25 @@ class SignUpScreenState extends State<SignUpScreen> {
                     : const Center(child: Text('Sign Up')),
               ),
             ),
+            const SizedBox(height: 16),
+            const Divider(color: Colors.grey),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Already have an account?"),
+                TextButton(
+                  onPressed: () {
+                    // Navigate to the signup screen
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SignInScreen()));
+                  },
+                  child: const Text("Sign In"),
+                ),
+              ],
+            )
           ],
         ),
       ),
@@ -106,7 +126,7 @@ class SignUpScreenState extends State<SignUpScreen> {
           .then((value) {
         if (value) {
           User? currentUser = FirebaseAuth.instance.currentUser;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) =>
