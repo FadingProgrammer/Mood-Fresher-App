@@ -79,7 +79,7 @@ class NotificationServices {
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization':
-              'key=AAAA60B-GWk:APA91bHogb48Lj9uKB45iA-UvlIE6jjHQl89LnJ3Vz7hQVIw-WOUksm-iuoDNns2E8P2pKLfEfc79X8hu8ZhBDvnLYYhH4Yd2Z43mFzzPhSHUhZn_jzsUXCtejIjogWkaM_0DB1rxFfI'
+              'key='
         });
   }
 
