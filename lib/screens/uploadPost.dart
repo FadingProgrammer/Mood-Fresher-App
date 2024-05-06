@@ -1,13 +1,19 @@
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mood_fresher/firebase/firebase.dart';
+import 'package:mood_fresher/modal/fileResult.dart';
+import 'package:mood_fresher/widgets/mediaplayer.dart';
 
 class UploadPostScreen extends StatefulWidget {
   final String uid;
   final String username;
+  final String photoURL;
   const UploadPostScreen(
-      {super.key, required this.uid, required this.username});
+      {super.key,
+      required this.uid,
+      required this.username,
+      required this.photoURL});
 
   @override
   State<UploadPostScreen> createState() => UploadPostScreenState();
@@ -17,7 +23,7 @@ class UploadPostScreenState extends State<UploadPostScreen> {
   TextEditingController captionController = TextEditingController();
   TextEditingController locationController = TextEditingController();
   GlobalKey<FormState> key = GlobalKey();
-  File? image;
+  FileResult? result;
   bool isUploading = false;
 
   @override
@@ -39,16 +45,17 @@ class UploadPostScreenState extends State<UploadPostScreen> {
                     color: Theme.of(context).canvasColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: image != null
-                      ? Image.file(image!)
+                  child: result != null
+                      ? _buildMediaWidget()
                       : Center(
                           child: TextButton(
                             onPressed: () async {
-                              image = await FirebaseService.pickImage();
+                              result = await FirebaseService.pickFile(
+                                  FileType.media);
                               setState(() {});
                             },
                             child: const Text(
-                              "Choose an Image",
+                              "Choose File",
                             ),
                           ),
                         ),
@@ -63,21 +70,22 @@ class UploadPostScreenState extends State<UploadPostScreen> {
                       ? null
                       : () async {
                           if (key.currentState?.validate() ?? false) {
-                            if (image != null) {
+                            if (result != null) {
                               setState(() {
                                 isUploading = true;
                               });
                               await FirebaseService.uploadPost(
-                                      imageFile: image!,
+                                      result: result!,
                                       uid: widget.uid,
                                       username: widget.username,
+                                      userImage: widget.photoURL,
                                       caption: captionController.text,
                                       location: locationController.text)
                                   .then((value) => setState(() {
                                         isUploading = false;
                                         captionController.clear();
                                         locationController.clear();
-                                        image = null;
+                                        result = null;
                                       }));
                             } else {
                               Fluttertoast.showToast(
@@ -103,13 +111,21 @@ class UploadPostScreenState extends State<UploadPostScreen> {
     );
   }
 
+  Widget _buildMediaWidget() {
+    if (result!.type == FileType.image) {
+      return Image.file(result!.file, fit: BoxFit.cover);
+    } else if (result!.type == FileType.video) {
+      return MediaPlayer.fileVideo(result!.file, autoPlay: true);
+    } else {
+      return Container(color: Colors.grey);
+    }
+  }
+
   Widget textField(String label, TextEditingController controller,
       {bool isRequired = false}) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-      ),
+      decoration: InputDecoration(labelText: label),
       validator: (value) {
         if (isRequired && (value == null || value.isEmpty)) {
           return '';

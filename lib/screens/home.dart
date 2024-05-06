@@ -1,30 +1,32 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mood_fresher/firebase/notification.dart';
 import 'package:mood_fresher/screens/feed.dart';
 import 'package:mood_fresher/screens/profile.dart';
 import 'package:mood_fresher/screens/reels.dart';
 import 'package:mood_fresher/screens/search.dart';
 import 'package:mood_fresher/screens/uploadPost.dart';
-import 'package:mood_fresher/utils/constants.dart';
 
 class HomeScreen extends StatefulWidget {
-  final User currentUser;
+  final String uid;
+  final String username;
+  final String photoURL;
 
-  const HomeScreen({super.key, required this.currentUser});
+  const HomeScreen(
+      {super.key,
+      required this.uid,
+      required this.username,
+      required this.photoURL});
   @override
   HomeScreenState createState() => HomeScreenState();
 }
 
 class HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  String username = '';
-  String profileImage = '';
 
   @override
   void initState() {
     super.initState();
-    getUserProfilePictureUrl(widget.currentUser.uid);
+    NotificationServices().initialize(context);
   }
 
   @override
@@ -67,10 +69,18 @@ class HomeScreenState extends State<HomeScreen> {
             label: 'Reels',
           ),
           BottomNavigationBarItem(
-            icon: CircleAvatar(
-              radius: 14,
-              backgroundImage: NetworkImage(
-                profileImage.isEmpty ? profilePlaceholder : profileImage,
+            icon: Container(
+              decoration: _currentIndex == 4
+                  ? BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    )
+                  : null,
+              child: CircleAvatar(
+                radius: _currentIndex == 4 ? 12 : 14,
+                backgroundImage: NetworkImage(
+                  widget.photoURL,
+                ),
               ),
             ),
             label: 'Profile',
@@ -84,29 +94,25 @@ class HomeScreenState extends State<HomeScreen> {
     switch (_currentIndex) {
       case 0:
         return FeedScreen(
-            uid: widget.currentUser.uid,
-            username: username,
-            photoURL: profileImage.isEmpty ? profilePlaceholder : profileImage);
+            uid: widget.uid,
+            username: widget.username,
+            photoURL: widget.photoURL);
       case 1:
         return const SearchScreen();
       case 2:
         return UploadPostScreen(
-            uid: widget.currentUser.uid, username: username);
+            uid: widget.uid,
+            username: widget.username,
+            photoURL: widget.photoURL);
       case 3:
         return const ReelsScreen();
       case 4:
-        return const ProfileScreen();
+        return ProfileScreen(
+            uid: widget.uid,
+            username: widget.username,
+            photoURL: widget.photoURL);
       default:
         return Container();
     }
-  }
-
-  Future<void> getUserProfilePictureUrl(String userId) async {
-    DocumentSnapshot<Map<String, dynamic>> snapshot =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    setState(() {
-      username = snapshot.data()?['Name'];
-      profileImage = snapshot.data()?['Image'];
-    });
   }
 }

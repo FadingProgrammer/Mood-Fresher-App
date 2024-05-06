@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:mood_fresher/firebase/notification.dart';
 import 'package:mood_fresher/screens/chat.dart';
 
 class ChatSearchScreen extends StatefulWidget {
@@ -71,8 +72,8 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
             leading: CircleAvatar(
               backgroundImage: NetworkImage(userData['Image']),
             ),
-            onTap: () => createChatWithUser(
-                user.id, userData['Name'], userData['Image']),
+            onTap: () => createChatWithUser(user.id, userData['Name'],
+                userData['Image'], userData['token']),
           );
         },
       ),
@@ -80,7 +81,7 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
   }
 
   Future<void> createChatWithUser(
-      String userId, String username, String photoURL) async {
+      String userId, String username, String photoURL, String userToken) async {
     await FirebaseFirestore.instance
         .collection('chats')
         .get()
@@ -101,15 +102,23 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
             builder: (context) => ChatScreen(
                 chatId: chat!.id,
                 uid: widget.uid,
+                username: widget.username,
+                userImage: widget.photoURL,
+                recipientId: userId,
                 recipient: username,
-                recipientImage: photoURL),
+                recipientImage: photoURL,
+                recipientToken: userToken),
           ),
         );
       } else {
         await FirebaseFirestore.instance.collection('chats').add({
           'participants': {
-            widget.uid: {'Name': widget.username, 'Image': widget.photoURL},
-            userId: {'Name': username, 'Image': photoURL},
+            widget.uid: {
+              'Name': widget.username,
+              'Image': widget.photoURL,
+              'Token': await NotificationServices().getToken()
+            },
+            userId: {'Name': username, 'Image': photoURL, 'Token': userToken},
           },
           'messages': [],
         }).then((value) => Navigator.push(
@@ -118,8 +127,12 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
                 builder: (context) => ChatScreen(
                     chatId: value.id,
                     uid: widget.uid,
+                    username: widget.username,
+                    userImage: widget.photoURL,
+                    recipientId: userId,
                     recipient: username,
-                    recipientImage: photoURL),
+                    recipientImage: photoURL,
+                    recipientToken: userToken),
               ),
             ));
       }

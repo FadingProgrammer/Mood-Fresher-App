@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-// import 'package:mood_fresher/screens/chat.dart';
 import 'package:mood_fresher/screens/inbox.dart';
-// import 'package:mood_fresher/screens/inbox.dart';
 import 'package:mood_fresher/widgets/post_card.dart';
 
 class FeedScreen extends StatelessWidget {
@@ -29,10 +27,13 @@ class FeedScreen extends StatelessWidget {
           }
         },
         child: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('posts').snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('posts')
+              .orderBy('timestamp', descending: true)
+              .snapshots(),
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (!snapshot.hasData) {
               return const Center(
                 child: CircularProgressIndicator(),
               );

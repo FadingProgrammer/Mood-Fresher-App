@@ -65,8 +65,12 @@ class InboxScreen extends StatelessWidget {
                           builder: (context) => ChatScreen(
                               chatId: chat.id,
                               uid: uid,
+                              username: username,
+                              userImage: photoURL,
+                              recipientId: otherParticipantId,
                               recipient: otherParticipant['Name'],
-                              recipientImage: otherParticipant['Image']))),
+                              recipientImage: otherParticipant['Image'],
+                              recipientToken: otherParticipant['Token']))),
                     ),
                   );
                 },

@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mood_fresher/widgets/mediaplayer.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:photo_view/photo_view.dart';
 
 class PostCard extends StatefulWidget {
   final DocumentSnapshot<Map<String, dynamic>> snap;
@@ -29,14 +31,6 @@ class PostCardState extends State<PostCard>
   final TextEditingController _commentController = TextEditingController();
   late AnimationController _animationController;
   late Animation<double> _animation;
-  // final FocusNode _commentFocusNode = FocusNode();
-
-  // @override
-  // void dispose() {
-  //   _commentController.dispose();
-  //   _commentFocusNode.dispose();
-  //   super.dispose();
-  // }
 
   @override
   void initState() {
@@ -44,6 +38,8 @@ class PostCardState extends State<PostCard>
     likeCount = widget.snap['likeCount'];
     isLiked = List<Map<String, dynamic>>.from(widget.snap['likedBy'])
         .any((item) => item['uid'] == widget.uid);
+    isBookmarked = List<String>.from(widget.snap['savedBy'])
+        .any((item) => item == widget.uid);
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -70,7 +66,7 @@ class PostCardState extends State<PostCard>
                   children: [
                     CircleAvatar(
                       radius: 18,
-                      backgroundImage: NetworkImage(widget.snap['Image']),
+                      backgroundImage: NetworkImage(widget.snap['userImage']),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 10),
@@ -91,6 +87,26 @@ class PostCardState extends State<PostCard>
             ),
           ),
           GestureDetector(
+            onTap: () {
+              if (widget.snap['fileType'] == 'FileType.image') {
+                var url = widget.snap['fileUrl'];
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Center(
+                      child: Hero(
+                        tag: url,
+                        child: PhotoView(
+                          imageProvider: NetworkImage(url),
+                          minScale: PhotoViewComputedScale.contained,
+                          maxScale: PhotoViewComputedScale.covered * 2.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
             onDoubleTap: () {
               setState(() {
                 isLiked = !isLiked;
@@ -109,10 +125,7 @@ class PostCardState extends State<PostCard>
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.35,
                   width: double.infinity,
-                  child: Image.network(
-                    widget.snap['Image'],
-                    fit: BoxFit.cover,
-                  ),
+                  child: _buildMediaWidget(),
                 ),
                 if (showHeart)
                   Positioned(
@@ -243,6 +256,18 @@ class PostCardState extends State<PostCard>
     );
   }
 
+  Widget _buildMediaWidget() {
+    final fileType = widget.snap['fileType'];
+    final fileUrl = widget.snap['fileUrl'];
+    if (fileType == 'FileType.image') {
+      return Image.network(fileUrl, fit: BoxFit.cover);
+    } else if (fileType == 'FileType.video') {
+      return MediaPlayer.urlVideo(fileUrl);
+    } else {
+      return Container(color: Theme.of(context).canvasColor);
+    }
+  }
+
   void updateLikes() async {
     try {
       var likedByList = List<Map<String, dynamic>>.from(widget.snap['likedBy']);
@@ -282,10 +307,16 @@ class PostCardState extends State<PostCard>
       DocumentReference userDocRef =
           FirebaseFirestore.instance.collection('users').doc(widget.uid);
       if (isBookmarked) {
+        await widget.snap.reference.update({
+          'savedBy': FieldValue.arrayUnion([widget.uid])
+        });
         await userDocRef.update({
           'savedPosts': FieldValue.arrayUnion([widget.snap.reference.id]),
         });
       } else {
+        await widget.snap.reference.update({
+          'savedBy': FieldValue.arrayRemove([widget.uid])
+        });
         await userDocRef.update({
           'savedPosts': FieldValue.arrayRemove([widget.snap.reference.id]),
         });
@@ -309,7 +340,7 @@ class PostCardState extends State<PostCard>
         children: [
           const TextSpan(text: 'Liked by '),
           TextSpan(
-              text: likedByList[0]['username'],
+              text: likedByList.first['username'],
               style: const TextStyle(fontWeight: FontWeight.bold)),
           if (likedByList.length > 1) ...[
             const TextSpan(text: ' and '),

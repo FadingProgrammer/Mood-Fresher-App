@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mood_fresher/firebase/firebase.dart';
@@ -18,15 +19,14 @@ class SignInScreenState extends State<SignInScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLogingIn = false;
+  bool _isLogingWithGoogle = false;
   String _errorText = '';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Center(child: Text('Login')),
-      ),
+      appBar: AppBar(title: const Center(child: Text('Sign In'))),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -129,32 +129,42 @@ class SignInScreenState extends State<SignInScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                await FirebaseService.loginWithGoogle().then((value) {
-                  User? currentUser = FirebaseAuth.instance.currentUser;
-                  if (value.additionalUserInfo?.isNewUser ?? false) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProfileSetupScreen(currentUser: currentUser!),
-                      ),
-                    );
+                setState(() {
+                  _isLogingWithGoogle = true;
+                });
+                await FirebaseService.loginWithGoogle().then((value) async {
+                  setState(() {
+                    _isLogingWithGoogle = false;
+                  });
+                  if (value != null) {
+                    User? currentUser = FirebaseAuth.instance.currentUser;
+                    if (currentUser != null) {
+                      if (value.additionalUserInfo?.isNewUser ?? false) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProfileSetupScreen(currentUser: currentUser),
+                          ),
+                        );
+                      } else {
+                        login(currentUser);
+                      }
+                    }
                   } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            HomeScreen(currentUser: currentUser!),
-                      ),
-                    );
+                    setState(() {
+                      _errorText = 'Failed to Login';
+                    });
                   }
                 });
               },
-              child: const SizedBox(
+              child: SizedBox(
                 width: double.infinity,
-                child: Center(
-                  child: Text('Login with Google'),
-                ),
+                child: _isLogingWithGoogle
+                    ? const Center(child: CircularProgressIndicator())
+                    : const Center(
+                        child: Text('Login with Google'),
+                      ),
               ),
             ),
             const SizedBox(height: 16),
@@ -192,22 +202,47 @@ class SignInScreenState extends State<SignInScreen> {
           .then((value) {
         if (value) {
           User? currentUser = FirebaseAuth.instance.currentUser;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HomeScreen(currentUser: currentUser!),
-            ),
-          );
+          if (currentUser != null) login(currentUser);
         } else {
           setState(() {
             _errorText = 'Failed to Login';
           });
         }
       });
-
       setState(() {
         _isLogingIn = false;
       });
     }
+  }
+
+  Future<void> login(User currentUser) async {
+    if (currentUser.displayName == null || currentUser.photoURL == null) {
+      await getUserProfilePictureUrl(currentUser.uid)
+          .then((value) => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomeScreen(
+                      uid: currentUser.uid,
+                      username: value[0],
+                      photoURL: value[1]),
+                ),
+              ));
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+              uid: currentUser.uid,
+              username: currentUser.displayName!,
+              photoURL: currentUser.photoURL!),
+        ),
+      );
+    }
+  }
+
+  Future<List<String>> getUserProfilePictureUrl(String userId) async {
+    DocumentSnapshot<Map<String, dynamic>> snapshot =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return [snapshot.data()?['Name'], snapshot.data()?['Image']];
   }
 }

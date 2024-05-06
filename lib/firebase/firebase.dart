@@ -5,28 +5,37 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mood_fresher/firebase/notification.dart';
+import 'package:mood_fresher/modal/fileResult.dart';
 
 class FirebaseService {
-  static Future<void> uploadPost({
-    required File imageFile,
-    required String uid,
-    required String username,
-    required String caption,
-    String? location,
-  }) async {
+  static Future<void> uploadPost(
+      {required FileResult result,
+      required String uid,
+      required String username,
+      required String userImage,
+      required String caption,
+      String? location}) async {
     try {
-      String imageUrl = await uploadImage(imageFile,
-          'post_image_${DateTime.now().millisecondsSinceEpoch}', "images");
+      String fileUrl = await uploadFile(
+          result.file,
+          'post_${DateTime.now().millisecondsSinceEpoch}.${result.extension}',
+          "posts");
+
       var postRef = await FirebaseFirestore.instance.collection('posts').add({
-        'Image': imageUrl,
+        'fileUrl': fileUrl,
+        'fileType': result.type.toString(),
         'username': username,
+        'userImage': userImage,
         'caption': caption,
         'location': location ?? '',
         'likeCount': 0,
         'likedBy': [],
+        'savedBy': [],
         'comments': [],
         'timestamp': FieldValue.serverTimestamp(),
       });
+
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'posts': FieldValue.arrayUnion([postRef.id]),
       });
@@ -35,15 +44,15 @@ class FirebaseService {
     }
   }
 
-  static Future<String> uploadImage(
-      File imageFile, String imageName, String category) async {
+  static Future<String> uploadFile(
+      File file, String fileName, String category) async {
     try {
       Reference storageReference =
-          FirebaseStorage.instance.ref().child('$category/$imageName');
-      UploadTask uploadTask = storageReference.putFile(imageFile);
+          FirebaseStorage.instance.ref().child('$category/$fileName');
+      UploadTask uploadTask = storageReference.putFile(file);
       TaskSnapshot taskSnapshot = await uploadTask;
-      String imageUrl = await taskSnapshot.ref.getDownloadURL();
-      return imageUrl;
+      String fileUrl = await taskSnapshot.ref.getDownloadURL();
+      return fileUrl;
     } catch (e) {
       Fluttertoast.showToast(msg: e.toString(), gravity: ToastGravity.CENTER);
       rethrow;
@@ -78,7 +87,8 @@ class FirebaseService {
     }
   }
 
-  static Future<void> updateProfile(String displayName, String imageUrl) async {
+  static Future<void> updateProfile(
+      String displayName, String imageUrl, String bio) async {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
       await currentUser?.updateDisplayName(displayName);
@@ -90,6 +100,8 @@ class FirebaseService {
         'Name': displayName,
         'Image': imageUrl,
         'email': currentUser.email,
+        'bio': bio,
+        'token': await NotificationServices().getToken(),
         'posts': [],
         'likedPosts': [],
         'savedPosts': [],
@@ -100,7 +112,7 @@ class FirebaseService {
     }
   }
 
-  static Future<UserCredential> loginWithGoogle() async {
+  static Future<UserCredential?> loginWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       final GoogleSignInAuthentication googleAuth =
@@ -113,14 +125,40 @@ class FirebaseService {
     } on FirebaseAuthException catch (e) {
       Fluttertoast.showToast(
           msg: e.message ?? e.toString(), gravity: ToastGravity.CENTER);
-      return Future.error(e);
+      return null;
     }
   }
 
-  static Future<File> pickImage() async {
+  static Future<FileResult?> pickFile(FileType type) async {
+    var extensions = type == FileType.image
+        ? ['jpg', 'jpeg', 'png']
+        : type == FileType.media
+            ? ['jpg', 'jpeg', 'png', 'mp4', 'mov', 'avi']
+            : ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'];
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: extensions,
     );
-    return File(result!.files.single.path!);
+    if (result != null) {
+      String? filePath = result.files.single.path;
+      if (filePath != null) {
+        String extension = filePath.split('.').last.toLowerCase();
+        if (type == FileType.media) type = _getFileType(extension);
+        if (type != FileType.any) {
+          return FileResult(File(filePath), type, extension);
+        }
+      }
+    }
+    return null;
+  }
+
+  static FileType _getFileType(String extension) {
+    if (extension == 'jpg' || extension == 'jpeg' || extension == 'png') {
+      return FileType.image;
+    } else if (extension == 'mp4' || extension == 'mov' || extension == 'avi') {
+      return FileType.video;
+    } else {
+      return FileType.any;
+    }
   }
 }
